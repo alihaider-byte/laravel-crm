@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lead Qualification API Tester</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        .json-pre {
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #e11d48;
+            border-radius: 50%;
+            width: 14px;
+            height: 14px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-slate-100 min-h-screen p-8 text-slate-800">
+
+    <div class="max-w-6xl mx-auto space-y-6">
+
+        <!-- Header -->
+        <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-rose-600">
+            <h1 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                🎯 Lead Qualification API Tester
+            </h1>
+            <p class="text-sm text-slate-500 mb-4">Test your Lead Qualification & Status Assignment APIs (Task 2)</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="text-xs font-semibold text-slate-600 block mb-1">API Base URL</label>
+                    <input type="text" id="baseUrl" value="http://public.test"
+                        class="w-full border p-2 rounded text-sm bg-slate-50">
+                </div>
+            </div>
+
+            <div class="mt-4 p-3 bg-rose-50 rounded text-sm">
+                <strong>Auto-Authentication:</strong> No token required - Service Account handles auth automatically!
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                <!-- Left: Actions -->
+                <div class="lg:col-span-1 space-y-4 p-4 bg-slate-50">
+
+                    <!-- Required Endpoints -->
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                        <div class="bg-rose-600 text-white p-3 font-semibold">✅ Required (8)</div>
+                        <div class="p-4 space-y-2">
+                            <button onclick="showForm('searchLeads')"
+                                class="w-full text-left px-3 py-2 rounded hover:bg-slate-50 border text-sm flex justify-between">
+                                <span>🔍 Search Leads</span>
+                                <span class="text-xs bg-green-100 text-green-700 px-1 rounded">GET</span>
+                            </button>
+                            <button onclick="showForm('getLead')"
+                                class="w-full text-left px-3 py-2 rounded hover:bg-slate-50 border text-sm flex justify-between">
+                                <span>📋 Get Lead Details</span>
+                                <span class="text-xs bg-green-100 text-green-700 px-1 rounded">GET</span>
+                            </button>
+                            <button onclick="showForm('updateQualification')"
+                                class="w-full text-left px-3 py-2 rounded hover:bg-slate-50 border text-sm flex justify-between">
+                                <span>✏️ Update Qualification</span>
+                                <span class="text-xs bg-yellow-100 text-yellow-700 px-1 rounded">PUT</span>
+                            </button>
+                            <button onclick="showForm('updateStage')"
+                                class="w-full text-left px-3 py-2 rounded hover:bg-slate-50 border text-sm flex justify-between">
+                                <span>🎯 Update Stage</span>
+                                <span class="text-xs bg-yellow-100 text-yellow-700 px-1 rounded">PUT</span>
+                            </button>
+                            <button onclick="showForm('attachTags')"
+                                class="w-full text-left px-3 py-2 rounded hover:bg-slate-50 border text-sm flex justify-between">
+                                <span>🏷️ Attach Tags</span>
+                                <span class="text-xs bg-blue-100 text-blue-700 px-1 rounded">POST</span>
+                            </button>
+                            <button onclick="getLookup('tags')"
+                                class="w-full text-left px-3 py-2 rounded hover:bg-slate-50 border text-sm flex justify-between">
+                                <span>🏷️ Get Tags</span>
+                                <span class="text-xs bg-green-100 text-green-700 px-1 rounded">GET</span>
+                            </button>
+                            <button onclick="showForm('createTag')"
+                                class="w-full text-left px-3 py-2 rounded hover:bg-slate-50 border text-sm flex justify-between">
+                                <span>➕ Create Tag</span>
+                                <span class="text-xs bg-blue-100 text-blue-700 px-1 rounded">POST</span>
+                            </button>
+                            <button onclick="getLookup('stages')"
+                                class="w-full text-left px-3 py-2 rounded hover:bg-slate-50 border text-sm flex justify-between">
+                                <span>📊 Get Stages</span>
+                                <span class="text-xs bg-green-100 text-green-700 px-1 rounded">GET</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Optional Endpoints -->
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                        <div class="bg-rose-300 text-slate-800 p-3 font-semibold">🔧 Optional (2)</div>
+                        <div class="p-4 space-y-2">
+                            <button onclick="showForm('getActivities')"
+                                class="w-full text-left px-3 py-2 rounded hover:bg-slate-50 border text-sm flex justify-between">
+                                <span>📜 Get Activities</span>
+                                <span class="text-xs bg-green-100 text-green-700 px-1 rounded">GET</span>
+                            </button>
+                            <button onclick="showForm('logActivity')"
+                                class="w-full text-left px-3 py-2 rounded hover:bg-slate-50 border text-sm flex justify-between">
+                                <span>📝 Log Activity</span>
+                                <span class="text-xs bg-blue-100 text-blue-700 px-1 rounded">POST</span>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Right: Forms & Response -->
+                <div class="lg:col-span-2 p-6 space-y-6">
+
+                    <!-- Forms Area -->
+                    <div id="formsArea"
+                        class="bg-slate-50 p-6 rounded-lg border-2 border-dashed border-slate-300 hidden">
+                        <!-- Search Leads Form -->
+                        <div id="searchLeadsForm" class="hidden form-section">
+                            <h3 class="font-bold mb-4 text-rose-700">🔍 Search Leads (Partial Match)</h3>
+                            <div class="space-y-3">
+                                <input type="text" id="search_query"
+                                    placeholder="Search by Lead Title or Person Name (e.g., Acme)"
+                                    class="w-full border p-2 rounded text-sm">
+                                <button onclick="searchLeads()"
+                                    class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded text-sm">
+                                    Search Leads
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Get Lead Form -->
+                        <div id="getLeadForm" class="hidden form-section">
+                            <h3 class="font-bold mb-4 text-rose-700">📋 Get Lead Details</h3>
+                            <div class="space-y-3">
+                                <input type="number" id="get_lead_id" placeholder="Lead ID *"
+                                    class="w-full border p-2 rounded text-sm">
+                                <button onclick="getLeadById()"
+                                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm">
+                                    Get Lead
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Update Qualification Form -->
+                        <div id="updateQualificationForm" class="hidden form-section">
+                            <h3 class="font-bold mb-4 text-rose-700">✏️ Update Lead Qualification</h3>
+                            <div class="space-y-3">
+                                <input type="number" id="qual_lead_id" placeholder="Lead ID *"
+                                    class="w-full border p-2 rounded text-sm bg-yellow-50">
+                                <textarea id="qual_notes"
+                                    placeholder="Qualification Notes (e.g., High fit: $50k budget, Q2 timeline, CEO champion)"
+                                    class="w-full border p-2 rounded text-sm" rows="3"></textarea>
+                                <select id="fit_score" class="w-full border p-2 rounded text-sm">
+                                    <option value="">Fit Score (optional)</option>
+                                    <option value="High">High</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="Low">Low</option>
+                                </select>
+                                <select id="urgency_level" class="w-full border p-2 rounded text-sm">
+                                    <option value="">Urgency Level (optional)</option>
+                                    <option value="High">High</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="Low">Low</option>
+                                </select>
+                                <input type="number" id="qual_value" placeholder="Lead Value (optional)"
+                                    class="w-full border p-2 rounded text-sm">
+                                <button onclick="updateQualification()"
+                                    class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded text-sm">
+                                    Save Qualification
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Update Stage Form -->
+                        <div id="updateStageForm" class="hidden form-section">
+                            <h3 class="font-bold mb-4 text-rose-700">🎯 Update Lead Stage</h3>
+                            <div class="space-y-3">
+                                <input type="number" id="stage_lead_id" placeholder="Lead ID *"
+                                    class="w-full border p-2 rounded text-sm bg-yellow-50">
+                                <input type="number" id="new_stage_id" placeholder="New Stage ID *"
+                                    class="w-full border p-2 rounded text-sm bg-yellow-50">
+                                <p class="text-xs text-slate-500 italic">💡 Use "Get Stages" to find IDs (e.g., 3 =
+                                    Qualified)</p>
+                                <button onclick="updateStage()"
+                                    class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded text-sm">
+                                    Update Stage
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Attach Tags Form -->
+                        <div id="attachTagsForm" class="hidden form-section">
+                            <h3 class="font-bold mb-4 text-rose-700">🏷️ Attach Tags</h3>
+                            <div class="space-y-3">
+                                <input type="number" id="tag_lead_id" placeholder="Lead ID *"
+                                    class="w-full border p-2 rounded text-sm bg-blue-50">
+                                <input type="text" id="tag_ids" placeholder="Tag IDs (comma-separated, e.g., 1,2,3) *"
+                                    class="w-full border p-2 rounded text-sm bg-blue-50">
+                                <p class="text-xs text-slate-500 italic">💡 Use "Get Tags" to find available tag IDs</p>
+                                <button onclick="attachTags()"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+                                    Attach Tags
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Create Tag Form -->
+                        <div id="createTagForm" class="hidden form-section">
+                            <h3 class="font-bold mb-4 text-rose-700">➕ Create New Tag</h3>
+                            <div class="space-y-3">
+                                <input type="text" id="tag_name" placeholder="Tag Name (e.g., High Priority)"
+                                    class="w-full border p-2 rounded text-sm bg-blue-50">
+                                <div class="flex items-center gap-2">
+                                    <label class="text-sm text-slate-600">Color:</label>
+                                    <input type="color" id="tag_color" value="#ef4444" class="h-8 w-16">
+                                </div>
+                                <button onclick="createTag()"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+                                    Create Tag
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Get Activities Form -->
+                        <div id="getActivitiesForm" class="hidden form-section">
+                            <h3 class="font-bold mb-4 text-rose-700">📜 Get Lead Activities</h3>
+                            <div class="space-y-3">
+                                <input type="number" id="activities_lead_id" placeholder="Lead ID *"
+                                    class="w-full border p-2 rounded text-sm">
+                                <button onclick="getActivities()"
+                                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm">
+                                    Get Activities
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Log Activity Form -->
+                        <div id="logActivityForm" class="hidden form-section">
+                            <h3 class="font-bold mb-4 text-rose-700">📝 Log Qualification Activity</h3>
+                            <div class="space-y-3">
+                                <input type="number" id="activity_lead_id" placeholder="Lead ID *"
+                                    class="w-full border p-2 rounded text-sm bg-blue-50">
+                                <select id="activity_type" class="w-full border p-2 rounded text-sm bg-blue-50">
+                                    <option value="">Activity Type *</option>
+                                    <option value="call">📞 Call</option>
+                                    <option value="meeting">🤝 Meeting</option>
+                                    <option value="lunch">🍽️ Lunch</option>
+                                    <option value="note">📝 Note</option>
+                                </select>
+                                <input type="text" id="activity_title" placeholder="Title (e.g., Qualification Call) *"
+                                    class="w-full border p-2 rounded text-sm">
+                                <textarea id="activity_comment" placeholder="Notes/Summary"
+                                    class="w-full border p-2 rounded text-sm" rows="3"></textarea>
+                                <input type="text" id="activity_location" placeholder="Location (optional)"
+                                    class="w-full border p-2 rounded text-sm">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <input type="datetime-local" id="schedule_from" placeholder="From"
+                                        class="w-full border p-2 rounded text-sm">
+                                    <input type="datetime-local" id="schedule_to" placeholder="To"
+                                        class="w-full border p-2 rounded text-sm">
+                                </div>
+                                <label class="flex items-center gap-2 text-sm">
+                                    <input type="checkbox" id="is_done" checked>
+                                    <span>Mark as completed</span>
+                                </label>
+                                <button onclick="logActivity()"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm w-full">
+                                    Log Activity
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Response Display -->
+                    <div id="responseArea" class="bg-white rounded-lg border overflow-hidden hidden">
+                        <div id="responseHeader" class="p-4 border-b flex justify-between items-center">
+                            <div>
+                                <span id="responseMethod" class="font-mono text-sm"></span>
+                                <span id="responseUrl" class="font-mono text-sm text-slate-600"></span>
+                            </div>
+                            <span id="responseStatus" class="px-2 py-1 rounded text-xs font-semibold"></span>
+                        </div>
+                        <pre id="responseBody" class="p-4 text-sm json-pre bg-slate-50 overflow-auto max-h-96"></pre>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Info Footer -->
+        <div class="bg-white p-4 rounded-lg shadow-sm text-xs text-slate-500">
+            <p><strong>Task 2:</strong> Lead Qualification & Status Assignment</p>
+            <p class="mt-1">Use this tester to qualify leads through guided evaluation, assign status/priority, and log
+                qualification sessions.</p>
+        </div>
+
+    </div>
+
+    <script>
+        const baseUrlInput = document.getElementById('baseUrl');
+
+        // Show form function
+        function showForm(formType) {
+            document.querySelectorAll('.form-section').forEach(f => f.classList.add('hidden'));
+            document.getElementById('formsArea').classList.remove('hidden');
+            document.getElementById(`${formType}Form`).classList.remove('hidden');
+        }
+
+        // Generic API call
+        async function makeApiCall(method, endpoint, data = null) {
+            const baseUrl = baseUrlInput.value.trim();
+            const url = `${baseUrl}${endpoint}`;
+
+            document.getElementById('responseArea').classList.add('hidden');
+            document.getElementById('responseMethod').textContent = method;
+            document.getElementById('responseUrl').textContent = endpoint;
+
+            try {
+                const config = {
+                    method,
+                    url,
+                    headers: { 'Accept': 'application/json' }
+                };
+
+                if (data && (method === 'POST' || method === 'PUT')) {
+                    config.data = data;
+                    config.headers['Content-Type'] = 'application/json';
+                }
+
+                const response = await axios(config);
+
+                document.getElementById('responseStatus').textContent = `${response.status} ${response.statusText}`;
+                document.getElementById('responseStatus').className = `px-2 py-1 rounded text-xs font-semibold ${response.status < 300 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`;
+                document.getElementById('responseBody').textContent = JSON.stringify(response.data, null, 2);
+                document.getElementById('responseArea').classList.remove('hidden');
+            } catch (error) {
+                document.getElementById('responseStatus').textContent = error.response?.status || 'ERROR';
+                document.getElementById('responseStatus').className = 'px-2 py-1 rounded text-xs font-semibold bg-red-100 text-red-700';
+                document.getElementById('responseBody').textContent = JSON.stringify(error.response?.data || { error: error.message }, null, 2);
+                document.getElementById('responseArea').classList.remove('hidden');
+            }
+        }
+
+        // API Functions
+        async function searchLeads() {
+            const query = document.getElementById('search_query').value;
+            if (!query) return alert('Enter search term');
+            await makeApiCall('GET', `/api/v1/leads/search?q=${encodeURIComponent(query)}`);
+        }
+
+        async function getLeadById() {
+            const id = document.getElementById('get_lead_id').value;
+            if (!id) return alert('Enter Lead ID');
+            await makeApiCall('GET', `/api/v1/leads/${id}`);
+        }
+
+        async function updateQualification() {
+            const id = document.getElementById('qual_lead_id').value;
+            if (!id) return alert('Enter Lead ID');
+
+            const data = {};
+            const notes = document.getElementById('qual_notes').value;
+            const fit = document.getElementById('fit_score').value;
+            const urgency = document.getElementById('urgency_level').value;
+            const value = document.getElementById('qual_value').value;
+
+            if (notes) data.qualification_notes = notes;
+            if (fit) data.fit_score = fit;
+            if (urgency) data.urgency_level = urgency;
+            if (value) data.lead_value = parseFloat(value);
+
+            await makeApiCall('PUT', `/api/v1/leads/${id}`, data);
+        }
+
+        async function updateStage() {
+            const id = document.getElementById('stage_lead_id').value;
+            const stageId = document.getElementById('new_stage_id').value;
+            if (!id || !stageId) return alert('Enter Lead ID and Stage ID');
+
+            await makeApiCall('PUT', `/api/v1/leads/${id}/stage`, {
+                lead_pipeline_stage_id: parseInt(stageId)
+            });
+        }
+
+        async function attachTags() {
+            const id = document.getElementById('tag_lead_id').value;
+            const tagIds = document.getElementById('tag_ids').value;
+            if (!id || !tagIds) return alert('Enter Lead ID and Tag IDs');
+
+            const tags = tagIds.split(',').map(t => parseInt(t.trim()));
+            await makeApiCall('POST', `/api/v1/leads/${id}/tags`, { tags });
+        }
+
+        async function createTag() {
+            const name = document.getElementById('tag_name').value;
+            const color = document.getElementById('tag_color').value;
+
+            if (!name) return alert('Enter Tag Name');
+
+            await makeApiCall('POST', '/api/v1/lookups/tags', { name, color });
+        }
+
+        async function getLookup(type) {
+            const endpoint = type === 'stages' ? '/api/v1/lookups/stages/1' : `/api/v1/lookups/${type}`;
+            await makeApiCall('GET', endpoint);
+        }
+
+        async function getActivities() {
+            const id = document.getElementById('activities_lead_id').value;
+            if (!id) return alert('Enter Lead ID');
+            await makeApiCall('GET', `/api/v1/leads/${id}/activities`);
+        }
+
+        async function logActivity() {
+            const id = document.getElementById('activity_lead_id').value;
+            const type = document.getElementById('activity_type').value;
+            const title = document.getElementById('activity_title').value;
+
+            if (!id || !type || !title) return alert('Fill required fields (Lead ID, Type, Title)');
+
+            const data = {
+                type,
+                title,
+                is_done: document.getElementById('is_done').checked ? 1 : 0
+            };
+
+            const comment = document.getElementById('activity_comment').value;
+            const location = document.getElementById('activity_location').value;
+            const from = document.getElementById('schedule_from').value;
+            const to = document.getElementById('schedule_to').value;
+
+            if (comment) data.comment = comment;
+            if (location) data.location = location;
+            if (from) data.schedule_from = from;
+            if (to) data.schedule_to = to;
+
+            await makeApiCall('POST', `/api/v1/leads/${id}/activities`, data);
+        }
+    </script>
+
+</body>
+
+</html>

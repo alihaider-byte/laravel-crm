@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Krayin CRM API Playground</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        .json-pre {
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        /* Simple spinner */
+        .spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3498db;
+            border-radius: 50%;
+            width: 14px;
+            height: 14px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-slate-100 min-h-screen p-8 text-slate-800">
+
+    <div class="max-w-6xl mx-auto space-y-6">
+
+        <!-- Header & Config -->
+        <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-blue-600">
+            <h1 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                🚀 Krayin CRM API Playground
+            </h1>
+            <p class="text-sm text-slate-500 mb-4">Test your Lead Intake & Profile Building APIs directly from here.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">API Base URL</label>
+                    <input type="text" id="baseUrl" value="http://public.test/api/v1"
+                        class="w-full border p-2 rounded bg-slate-50 font-mono text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">
+                        <input type="checkbox" id="autoAuth" onchange="toggleAutoAuth()" class="mr-2">
+                        <span class="text-green-600 font-bold">🤖 Auto-Auth Mode (LIBBi)</span>
+                    </label>
+                    <p class="text-xs text-slate-500 mt-1">Enable to test without providing a token (uses service
+                        account)</p>
+                </div>
+            </div>
+
+            <div id="manualAuthSection">
+                <div class="grid grid-cols-1 gap-4 mt-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Bearer Token (Required)</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="token" placeholder="Paste token or Login →"
+                                class="w-full border p-2 rounded font-mono text-sm border-blue-300 focus:ring-2 ring-blue-200 outline-none">
+                            <button onclick="showLogin()"
+                                class="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 whitespace-nowrap">🔑
+                                Login</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Login Form (Hidden by default) -->
+                <div id="loginSection" class="hidden mt-4 bg-slate-50 p-4 rounded border border-blue-100">
+                    <h4 class="text-sm font-bold text-blue-800 mb-2">Generate Token via Login</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                        <div>
+                            <label class="text-xs text-slate-500">Email</label>
+                            <input type="email" id="login_email" value="admin@example.com"
+                                class="w-full border p-2 rounded text-sm">
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-500">Password</label>
+                            <input type="password" id="login_password" value="admin123"
+                                class="w-full border p-2 rounded text-sm">
+                        </div>
+                        <button onclick="performLogin()"
+                            class="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700 w-full">Get
+                            Token</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                <!-- Left: Actions -->
+                <div class="lg:col-span-1 space-y-4">
+
+                    <!-- Leads Section -->
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                        <div class="bg-indigo-50 p-3 font-semibold text-indigo-700 border-b border-indigo-100">Leads
+                        </div>
+                        <div class="p-4 space-y-2">
+                            <button onclick="getLeads()"
+                                class="w-full text-left px-3 py-2 rounded hover:bg-slate-50 border text-sm flex justify-between">
+                                <span>📂 List All Leads</span>
+                                <span class="text-xs bg-green-100 text-green-700 px-1 rounded">GET</span>
+                            </button>
+                            <button onclick="showForm('createLead')"
+                                class="w-full text-left px-3 py-2 rounded hover:bg-slate-50 border text-sm flex justify-between">
+                                <span>✨ Create New Lead</span>
+                                <span class="text-xs bg-blue-100 text-blue-700 px-1 rounded">POST</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Persons Section -->
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                        <div class="bg-emerald-50 p-3 font-semibold text-emerald-700 border-b border-emerald-100">
+                            Persons
+                            (Contacts)</div>
+                        <div class="p-4 space-y-2">
+                            <button onclick="getPersons()"
+                                class="w-full text-left px-3 py-2 rounded hover:bg-slate-50 border text-sm flex justify-between">
+                                <span>👥 List All Persons</span>
+                                <span class="text-xs bg-green-100 text-green-700 px-1 rounded">GET</span>
+                            </button>
+                            <button onclick="showForm('createPerson')"
+                                class="w-full text-left px-3 py-2 rounded hover:bg-slate-50 border text-sm flex justify-between">
+                                <span>👤 Create Person</span>
+                                <span class="text-xs bg-blue-100 text-blue-700 px-1 rounded">POST</span>
+                            </button>
+                            <button onclick="showForm('searchPerson')"
+                                class="w-full text-left px-3 py-2 rounded hover:bg-slate-50 border text-sm flex justify-between">
+                                <span>🔍 Search Person</span>
+                                <span class="text-xs bg-green-100 text-green-700 px-1 rounded">GET</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Organizations Section -->
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                        <div class="bg-purple-50 p-3 font-semibold text-purple-700 border-b border-purple-100">
+                            Organizations
+                        </div>
+                        <div class="p-4 space-y-2">
+                            <button onclick="getOrganizations()"
+                                class="w-full text-left px-3 py-2 rounded hover:bg-slate-50 border text-sm flex justify-between">
+                                <span>🏢 List Organizations</span>
+                                <span class="text-xs bg-green-100 text-green-700 px-1 rounded">GET</span>
+                            </button>
+                            <button onclick="showForm('createOrganization')"
+                                class="w-full text-left px-3 py-2 rounded hover:bg-slate-50 border text-sm flex justify-between">
+                                <span>🏭 Create Organization</span>
+                                <span class="text-xs bg-blue-100 text-blue-700 px-1 rounded">POST</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Lookups Section -->
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                        <div class="bg-amber-50 p-3 font-semibold text-amber-700 border-b border-amber-100">Lookups
+                        </div>
+                        <div class="p-4 space-y-2">
+                            <button onclick="getLookups('users')"
+                                class="w-full text-left px-3 py-2 rounded hover:bg-slate-50 border text-sm">👤 Get Users
+                                (Sales Owners)</button>
+                            <button onclick="getLookups('pipelines')"
+                                class="w-full text-left px-3 py-2 rounded hover:bg-slate-50 border text-sm">🔄 Get
+                                Pipelines</button>
+                            <button onclick="getLookups('sources')"
+                                class="w-full text-left px-3 py-2 rounded hover:bg-slate-50 border text-sm">📍 Get
+                                Sources</button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Right: Interactive Area -->
+                <div class="lg:col-span-2 space-y-6">
+
+                    <!-- Forms Container -->
+                    <div id="formsArea" class="bg-white p-6 rounded-lg shadow-md hidden">
+
+                        <!-- Create Lead Form -->
+                        <div id="createLeadForm" class="hidden form-section">
+                            <h3 class="font-bold mb-4 text-indigo-700">Create New Lead</h3>
+                            <div class="space-y-3">
+                                <input type="text" id="lead_title" placeholder="Lead Title (e.g. Enterprise Deal) *"
+                                    class="w-full border p-2 rounded text-sm bg-slate-50">
+                                <textarea id="lead_desc" placeholder="Description"
+                                    class="w-full border p-2 rounded text-sm"></textarea>
+
+                                <div class="grid grid-cols-2 gap-3">
+                                    <input type="number" id="lead_value" placeholder="Value (e.g. 5000)"
+                                        class="w-full border p-2 rounded text-sm">
+                                    <input type="text" id="lead_person" placeholder="Person ID *"
+                                        class="w-full border p-2 rounded text-sm">
+                                </div>
+
+                                <div class="grid grid-cols-3 gap-3">
+                                    <input type="number" id="lead_pipeline" value="1" placeholder="Pipeline ID *"
+                                        class="w-full border p-2 rounded text-sm">
+                                    <input type="number" id="lead_stage" value="1" placeholder="Stage ID *"
+                                        class="w-full border p-2 rounded text-sm">
+                                    <input type="date" id="lead_date" placeholder="Expected Close Date"
+                                        class="w-full border p-2 rounded text-sm">
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-3">
+                                    <input type="number" id="lead_source" placeholder="Source ID (optional)"
+                                        class="w-full border p-2 rounded text-sm">
+                                    <input type="number" id="lead_type" placeholder="Type ID (optional)"
+                                        class="w-full border p-2 rounded text-sm">
+                                </div>
+
+                                <button onclick="submitLead()"
+                                    class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 text-sm w-full font-bold">Create
+                                    Lead</button>
+                            </div>
+                        </div>
+
+                        <!-- Create Person Form -->
+                        <div id="createPersonForm" class="hidden form-section">
+                            <h3 class="font-bold mb-4 text-emerald-700">Create New Person</h3>
+                            <div class="space-y-3">
+                                <input type="text" id="person_name" placeholder="Full Name *"
+                                    class="w-full border p-2 rounded text-sm bg-slate-50">
+                                <input type="text" id="person_job" placeholder="Job Title"
+                                    class="w-full border p-2 rounded text-sm">
+
+                                <!-- Emails Section -->
+                                <div class="border-t pt-3">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="text-xs font-semibold text-slate-600">Emails</label>
+                                        <button type="button" onclick="addEmailField()"
+                                            class="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded hover:bg-emerald-200">+
+                                            Add Email</button>
+                                    </div>
+                                    <div id="emails_container">
+                                        <div class="flex gap-2 mb-2 email-row">
+                                            <input type="email" placeholder="Email"
+                                                class="flex-1 border p-2 rounded text-sm person-email-value">
+                                            <select class="border p-2 rounded text-sm person-email-label">
+                                                <option value="work">Work</option>
+                                                <option value="personal">Personal</option>
+                                                <option value="other">Other</option>
+                                            </select>
+                                            <button type="button" onclick="removeEmailField(this)"
+                                                class="text-red-600 px-2 text-sm hover:bg-red-50 rounded">✕</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Phone Numbers Section -->
+                                <div class="border-t pt-3">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="text-xs font-semibold text-slate-600">Phone Numbers</label>
+                                        <button type="button" onclick="addPhoneField()"
+                                            class="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded hover:bg-emerald-200">+
+                                            Add Phone</button>
+                                    </div>
+                                    <div id="phones_container">
+                                        <div class="flex gap-2 mb-2 phone-row">
+                                            <input type="text" placeholder="Phone Number"
+                                                class="flex-1 border p-2 rounded text-sm person-phone-value">
+                                            <select class="border p-2 rounded text-sm person-phone-label">
+                                                <option value="mobile">Mobile</option>
+                                                <option value="work">Work</option>
+                                                <option value="home">Home</option>
+                                                <option value="other">Other</option>
+                                            </select>
+                                            <button type="button" onclick="removePhoneField(this)"
+                                                class="text-red-600 px-2 text-sm hover:bg-red-50 rounded">✕</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <input type="number" id="person_org" placeholder="Organization ID (optional)"
+                                    class="w-full border p-2 rounded text-sm">
+
+                                <button onclick="submitPerson()"
+                                    class="bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700 text-sm w-full font-bold">Create
+                                    Person</button>
+                            </div>
+                        </div>
+
+                        <!-- Search Person Form -->
+                        <div id="searchPersonForm" class="hidden form-section">
+                            <h3 class="font-bold mb-4 text-emerald-700">Search Person</h3>
+                            <div class="space-y-3">
+                                <input type="text" id="search_query" placeholder="Search by name or email"
+                                    class="w-full border p-2 rounded text-sm bg-slate-50">
+                                <button onclick="searchPersons()"
+                                    class="bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700 text-sm w-full font-bold">Search
+                                    Persons</button>
+                            </div>
+                        </div>
+
+                        <!-- Create Organization Form -->
+                        <div id="createOrganizationForm" class="hidden form-section">
+                            <h3 class="font-bold mb-4 text-purple-700">Create New Organization</h3>
+                            <div class="space-y-3">
+                                <input type="text" id="org_name"
+                                    placeholder="Organization Name (e.g. Acme Corporation) *"
+                                    class="w-full border p-2 rounded text-sm bg-slate-50">
+
+                                <div class="border-t pt-3 mt-3">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-2">Address
+                                        (Optional)</label>
+                                    <input type="text" id="org_address_street" placeholder="Street Address"
+                                        class="w-full border p-2 rounded text-sm mb-2">
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <input type="text" id="org_address_city" placeholder="City"
+                                            class="w-full border p-2 rounded text-sm">
+                                        <input type="text" id="org_address_state" placeholder="State/Province"
+                                            class="w-full border p-2 rounded text-sm">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2 mt-2">
+                                        <input type="text" id="org_address_country" placeholder="Country"
+                                            class="w-full border p-2 rounded text-sm">
+                                        <input type="text" id="org_address_postcode" placeholder="Postal Code"
+                                            class="w-full border p-2 rounded text-sm">
+                                    </div>
+                                </div>
+
+                                <button onclick="submitOrganization()"
+                                    class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 text-sm w-full font-bold">Create
+                                    Organization</button>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Output Area -->
+                    <div
+                        class="bg-slate-900 text-slate-100 p-6 rounded-lg shadow-md font-mono text-sm overflow-x-auto min-h-[300px]">
+                        <div class="flex justify-between items-center mb-2 border-b border-slate-700 pb-2">
+                            <span class="text-xs uppercase tracking-wider text-slate-400">Response Output</span>
+                            <button onclick="clearOutput()"
+                                class="text-xs text-slate-400 hover:text-white">Clear</button>
+                        </div>
+                        <pre id="output" class="json-pre">Waiting for request...</pre>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // --- Persistence Logic ---
+            document.addEventListener('DOMContentLoaded', () => {
+                const savedToken = localStorage.getItem('krayin_api_token');
+                if (savedToken) {
+                    document.getElementById('token').value = savedToken;
+                }
+
+                const savedBaseUrl = localStorage.getItem('krayin_api_url');
+                if (savedBaseUrl) {
+                    document.getElementById('baseUrl').value = savedBaseUrl;
+                }
+            });
+
+            document.getElementById('token').addEventListener('change', (e) => {
+                localStorage.setItem('krayin_api_token', e.target.value);
+            });
+
+            document.getElementById('baseUrl').addEventListener('change', (e) => {
+                localStorage.setItem('krayin_api_url', e.target.value);
+            });
+
+            function log(data) {
+                document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+            }
+
+            function getHeaders() {
+                const token = document.getElementById('token').value;
+                if (!token) {
+                    alert("Please login or enter a Bearer Token first!");
+                    return null;
+                }
+                return {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                };
+            }
+
+            function getBaseUrl() {
+                return document.getElementById('baseUrl').value;
+            }
+
+            function showForm(formId) {
+                document.getElementById('formsArea').classList.remove('hidden');
+                document.querySelectorAll('.form-section').forEach(el => el.classList.add('hidden'));
+                document.getElementById(formId + 'Form').classList.remove('hidden');
+            }
+
+            function toggleAutoAuth() {
+                const isAutoAuth = document.getElementById('autoAuth').checked;
+                const manualSection = document.getElementById('manualAuthSection');
+                const loginSection = document.getElementById('loginSection');
+
+                if (isAutoAuth) {
+                    manualSection.classList.add('hidden');
+                    loginSection.classList.add('hidden');
+                    log("✅ Auto-Auth Mode Enabled - No token required!");
+                } else {
+                    manualSection.classList.remove('hidden');
+                    log("Manual Auth Mode - Token required");
+                }
+            }
+
+            function showLogin() {
+                document.getElementById('loginSection').classList.toggle('hidden');
+            }
+
+            function clearOutput() {
+                document.getElementById('output').textContent = "Ready...";
+            }
+
+            // --- API Calls ---
+
+            async function performLogin() {
+                const email = document.getElementById('login_email').value;
+                const password = document.getElementById('login_password').value;
+                const url = `${getBaseUrl()}/login`;
+
+                try {
+                    log("Logging in...");
+                    const res = await axios.post(url, { email, password });
+
+                    if (res.data && res.data.data && res.data.data.token) {
+                        const token = res.data.data.token;
+                        document.getElementById('token').value = token;
+                        localStorage.setItem('krayin_api_token', token);
+                        log({
+                            message: "Login Successful! Token saved.",
+                            user: res.data.data.user
+                        });
+                        document.getElementById('loginSection').classList.add('hidden');
+                    } else {
+                        log(res.data);
+                    }
+
+                } catch (e) {
+                    log(e.response ? e.response.data : e.message);
+                }
+            }
+
+            async function getLeads() {
+                const headers = getHeaders();
+                if (!headers) return;
+
+                try {
+                    log("Loading...");
+                    const res = await axios.get(`${getBaseUrl()}/leads`, { headers });
+                    log(res.data);
+                } catch (e) {
+                    log(e.response ? e.response.data : e.message);
+                }
+            }
+
+            async function getPersons() {
+                const headers = getHeaders();
+                if (!headers) return;
+
+                try {
+                    log("Loading...");
+                    const res = await axios.get(`${getBaseUrl()}/persons`, { headers });
+                    log(res.data);
+                } catch (e) {
+                    log(e.response ? e.response.data : e.message);
+                }
+            }
+
+            async function getLookups(type) {
+                const headers = getHeaders();
+                if (!headers) return;
+
+                try {
+                    log("Loading...");
+                    const res = await axios.get(`${getBaseUrl()}/lookups/${type}`, { headers });
+                    log(res.data);
+                } catch (e) {
+                    log(e.response ? e.response.data : e.message);
+                }
+            }
+
+            async function submitLead() {
+                const headers = getHeaders();
+                if (!headers) return;
+
+                const data = {
+                    title: document.getElementById('lead_title').value,
+                    description: document.getElementById('lead_desc').value,
+                    lead_value: document.getElementById('lead_value').value,
+                    person_id: document.getElementById('lead_person').value || null,
+                    lead_pipeline_id: document.getElementById('lead_pipeline').value,
+                    lead_pipeline_stage_id: document.getElementById('lead_stage').value,
+                    lead_source_id: document.getElementById('lead_source').value || null,
+                    lead_type_id: document.getElementById('lead_type').value || null,
+                    expected_close_date: document.getElementById('lead_date').value || null
+                };
+
+                try {
+                    log("Creating Lead...");
+                    const res = await axios.post(`${getBaseUrl()}/leads`, data, { headers });
+                    log(res.data);
+                } catch (e) {
+                    log(e.response ? e.response.data : e.message);
+                }
+            }
+
+            // Dynamic field management for Person form
+            function addEmailField() {
+                const container = document.getElementById('emails_container');
+                const newRow = document.createElement('div');
+                newRow.className = 'flex gap-2 mb-2 email-row';
+                newRow.innerHTML = `
+                <input type="email" placeholder="Email" class="flex-1 border p-2 rounded text-sm person-email-value">
+                <select class="border p-2 rounded text-sm person-email-label">
+                    <option value="work">Work</option>
+                    <option value="personal">Personal</option>
+                    <option value="other">Other</option>
+                </select>
+                <button type="button" onclick="removeEmailField(this)" class="text-red-600 px-2 text-sm hover:bg-red-50 rounded">✕</button>
+            `;
+                container.appendChild(newRow);
+            }
+
+            function removeEmailField(btn) {
+                const container = document.getElementById('emails_container');
+                if (container.children.length > 1) {
+                    btn.parentElement.remove();
+                } else {
+                    alert('At least one email field is required');
+                }
+            }
+
+            function addPhoneField() {
+                const container = document.getElementById('phones_container');
+                const newRow = document.createElement('div');
+                newRow.className = 'flex gap-2 mb-2 phone-row';
+                newRow.innerHTML = `
+                <input type="text" placeholder="Phone Number" class="flex-1 border p-2 rounded text-sm person-phone-value">
+                <select class="border p-2 rounded text-sm person-phone-label">
+                    <option value="mobile">Mobile</option>
+                    <option value="work">Work</option>
+                    <option value="home">Home</option>
+                    <option value="other">Other</option>
+                </select>
+                <button type="button" onclick="removePhoneField(this)" class="text-red-600 px-2 text-sm hover:bg-red-50 rounded">✕</button>
+            `;
+                container.appendChild(newRow);
+            }
+
+            function removePhoneField(btn) {
+                const container = document.getElementById('phones_container');
+                if (container.children.length > 1) {
+                    btn.parentElement.remove();
+                } else {
+                    alert('At least one phone field is required');
+                }
+            }
+
+            async function submitPerson() {
+                const headers = getHeaders();
+                if (!headers) return;
+
+                // Collect all email fields
+                const emailRows = document.querySelectorAll('.email-row');
+                const emails = [];
+                emailRows.forEach(row => {
+                    const value = row.querySelector('.person-email-value').value;
+                    const label = row.querySelector('.person-email-label').value;
+                    if (value) {
+                        emails.push({ value, label });
+                    }
+                });
+
+                // Collect all phone fields
+                const phoneRows = document.querySelectorAll('.phone-row');
+                const phones = [];
+                phoneRows.forEach(row => {
+                    const value = row.querySelector('.person-phone-value').value;
+                    const label = row.querySelector('.person-phone-label').value;
+                    if (value) {
+                        phones.push({ value, label });
+                    }
+                });
+
+                const data = {
+                    name: document.getElementById('person_name').value,
+                    job_title: document.getElementById('person_job').value,
+                    organization_id: document.getElementById('person_org').value || null,
+                    emails: emails,
+                    contact_numbers: phones
+                };
+
+                try {
+                    log("Creating Person...");
+                    const res = await axios.post(`${getBaseUrl()}/persons`, data, { headers });
+                    log(res.data);
+
+                    // Clear form on success
+                    if (res.status === 201) {
+                        document.getElementById('person_name').value = '';
+                        document.getElementById('person_job').value = '';
+                        document.getElementById('person_org').value = '';
+
+                        // Reset email fields to one empty row
+                        const emailContainer = document.getElementById('emails_container');
+                        emailContainer.innerHTML = `
+                        <div class="flex gap-2 mb-2 email-row">
+                            <input type="email" placeholder="Email" class="flex-1 border p-2 rounded text-sm person-email-value">
+                            <select class="border p-2 rounded text-sm person-email-label">
+                                <option value="work">Work</option>
+                                <option value="personal">Personal</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <button type="button" onclick="removeEmailField(this)" class="text-red-600 px-2 text-sm hover:bg-red-50 rounded">✕</button>
+                        </div>
+                    `;
+
+                        // Reset phone fields to one empty row
+                        const phoneContainer = document.getElementById('phones_container');
+                        phoneContainer.innerHTML = `
+                        <div class="flex gap-2 mb-2 phone-row">
+                            <input type="text" placeholder="Phone Number" class="flex-1 border p-2 rounded text-sm person-phone-value">
+                            <select class="border p-2 rounded text-sm person-phone-label">
+                                <option value="mobile">Mobile</option>
+                                <option value="work">Work</option>
+                                <option value="home">Home</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <button type="button" onclick="removePhoneField(this)" class="text-red-600 px-2 text-sm hover:bg-red-50 rounded">✕</button>
+                        </div>
+                    `;
+                    }
+                } catch (e) {
+                    log(e.response ? e.response.data : e.message);
+                }
+            }
+
+            async function getOrganizations() {
+                const headers = getHeaders();
+                if (!headers) return;
+
+                try {
+                    log("Loading organizations...");
+                    const res = await axios.get(`${getBaseUrl()}/organizations`, { headers });
+                    log(res.data);
+                } catch (e) {
+                    log(e.response ? e.response.data : e.message);
+                }
+            }
+
+            async function searchPersons() {
+                const headers = getHeaders();
+                if (!headers) return;
+
+                const query = document.getElementById('search_query').value;
+                if (!query) {
+                    alert('Please enter a search query');
+                    return;
+                }
+
+                try {
+                    log("Searching persons...");
+                    const res = await axios.get(`${getBaseUrl()}/persons/search?q=${encodeURIComponent(query)}`, { headers });
+                    log(res.data);
+                } catch (e) {
+                    log(e.response ? e.response.data : e.message);
+                }
+            }
+
+            async function submitOrganization() {
+                const headers = getHeaders();
+                if (!headers) return;
+
+                const name = document.getElementById('org_name').value;
+                if (!name) {
+                    alert('Organization name is required');
+                    return;
+                }
+
+                const data = {
+                    name: name
+                };
+
+                // Collect address fields
+                const street = document.getElementById('org_address_street').value;
+                const city = document.getElementById('org_address_city').value;
+                const state = document.getElementById('org_address_state').value;
+                const country = document.getElementById('org_address_country').value;
+                const postcode = document.getElementById('org_address_postcode').value;
+
+                // Only include address if at least one field is filled
+                if (street || city || state || country || postcode) {
+                    data.address = {
+                        street: street || null,
+                        city: city || null,
+                        state: state || null,
+                        country: country || null,
+                        postcode: postcode || null
+                    };
+                }
+
+                try {
+                    log("Creating Organization...");
+                    const res = await axios.post(`${getBaseUrl()}/organizations`, data, { headers });
+                    log(res.data);
+                    // Clear form on success
+                    if (res.status === 201) {
+                        document.getElementById('org_name').value = '';
+                        document.getElementById('org_address_street').value = '';
+                        document.getElementById('org_address_city').value = '';
+                        document.getElementById('org_address_state').value = '';
+                        document.getElementById('org_address_country').value = '';
+                        document.getElementById('org_address_postcode').value = '';
+                    }
+                } catch (e) {
+                    log(e.response ? e.response.data : e.message);
+                }
+            }
+        </script>
+</body>
+
+</html>
