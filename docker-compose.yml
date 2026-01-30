@@ -1,66 +1,96 @@
-version: '3.8'
-
 services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile
-    image: laravel-crm:latest
-    container_name: laravel_crm_app
-    restart: unless-stopped
+      dockerfile: docker/php/Dockerfile
+    image: laravel-crm-app:latest
+    env_file:
+      - .env  # Injected into the environment, not mounted as a file
+    volumes:
+      # Named volumes for persistence (avoids host permission issues)
+      - crm_storage:/var/www/html/storage
+      - crm_cache:/var/www/html/bootstrap/cache
+      # Mount public directory for nginx on host to serve static files
+      - ./public:/var/www/html/public:ro
     ports:
-      - "8000:80"
-    environment:
-      APP_NAME: "${APP_NAME}"
-      APP_ENV: "${APP_ENV}"
-      APP_KEY: "${APP_KEY}"
-      APP_DEBUG: "${APP_DEBUG}"
-      APP_URL: "http://localhost:8000"
-      DB_CONNECTION: mysql
-      DB_HOST: db
-      DB_PORT: 3306
-      DB_DATABASE: "${DB_DATABASE}"
-      DB_USERNAME: "${DB_USERNAME}"
-      DB_PASSWORD: "${DB_PASSWORD}"
-      REDIS_HOST: redis
-      REDIS_PASSWORD: null
-      REDIS_PORT: 6379
-      MAIL_MAILER: "${MAIL_MAILER}"
-      MAIL_HOST: "${MAIL_HOST}"
-      MAIL_PORT: "${MAIL_PORT}"
-      MAIL_USERNAME: "${MAIL_USERNAME}"
-      MAIL_PASSWORD: "${MAIL_PASSWORD}"
-      MAIL_ENCRYPTION: "${MAIL_ENCRYPTION}"
+      - "9000:9000"  # Expose PHP-FPM for host nginx
     depends_on:
       - db
       - redis
     networks:
-      - crm-network
-
+      - appnet
+ 
   db:
     image: mysql:8.0
-    container_name: laravel_crm_db
-    restart: unless-stopped
-    environment:
-      MYSQL_DATABASE: "${DB_DATABASE}"
-      MYSQL_USER: "${DB_USERNAME}"
-      MYSQL_PASSWORD: "${DB_PASSWORD}"
-      MYSQL_ROOT_PASSWORD: "${DB_PASSWORD}" # Use same password for root for simplicity in dev/docker
+    env_file:
+      - .env
     volumes:
       - db_data:/var/lib/mysql
     networks:
-      - crm-network
-
+      - appnet
+ 
   redis:
-    image: redis:alpine
-    container_name: laravel_crm_redis
-    restart: unless-stopped
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
     networks:
-      - crm-network
-
-networks:
-  crm-network:
-    driver: bridge
-
+      - appnet
+ 
+  node:
+    build:
+      context: .
+      dockerfile: docker/node/Dockerfile
+    env_file:
+      - .env
+    volumes:
+      # Mount only source files needed for vite dev (not node_modules - use image-built)
+      - ./resources:/app/resources:ro
+      - ./public:/app/public
+      - ./vite.config.js:/app/vite.config.js:ro
+      - ./package.json:/app/package.json:ro
+    ports:
+      - "5173:5173"
+    networks:
+      - appnet
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+ 
+  worker:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - crm_storage:/var/www/html/storage
+    command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3"]
+    networks:
+      - appnet
+ 
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - crm_storage:/var/www/html/storage
+    command: ["/bin/sh", "-c", "while true; do php artisan schedule:run; sleep 60; done"]
+    networks:
+      - appnet
+ 
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - appnet
+ 
 volumes:
   db_data:
+  crm_storage:
+  crm_cache:
+ 
+networks:
+  appnet:
+    driver: bridge

@@ -7,7 +7,6 @@
 /.github
 /.idea
 /.vscode
-.env
 .phpunit.result.cache
 docker-compose.yml
 phpunit.xml
